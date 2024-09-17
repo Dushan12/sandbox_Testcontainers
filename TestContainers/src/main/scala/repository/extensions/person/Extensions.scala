@@ -10,3 +10,12 @@ extension (input: Person)
       .append("lastName", input.lastName)
       .append("email", input.email)
   }
+
+extension (document: Document)
+  def fromMongoObject: Person = {
+    Person(
+      firstName = document.getString("firstName"),
+      lastName = document.getString("lastName"),
+      email = document.getString("email")
+    )
+  }

@@ -1,29 +1,37 @@
 package services
 
 import com.mongodb.client.{MongoClient, MongoClients}
+import config.ApplicationConfig
 import models.Person
 import repository.PersonUal
-import zio.{ZIO, ZLayer}
+import zio.{ZEnvironment, ZIO, ZLayer}
 
 object PeopleService {
-
-
-  private def getClient(): ZIO[Any, Throwable, MongoClient] = {
-    ZIO.attempt(MongoClients.create("mongodb://localhost:27017"))
-  }
-
 
   def savePerson(person: Person): ZIO[Any, Throwable, Boolean] = {
     (for {
       client <- ZIO.service[MongoClient]
+      applicationConfig <- ZIO.service[ApplicationConfig]
       res <- PersonUal.insertOne(person)
     } yield {
       res
-    }).provide(ZLayer.apply(getClient()))
+    }).provide(
+      ZLayer.apply(ZIO.attempt(MongoClients.create("mongodb://localhost:27017"))),
+      ZLayer.apply(ZIO.succeed(ApplicationConfig("testContainers", "people")))
+    )
   }
 
-  def getPeople(): List[Person] = {
-    throw new NotImplementedError()
+  def getPeople(): ZIO[Any, Throwable, List[Person]] = {
+    (for {
+      client <- ZIO.service[MongoClient]
+      applicationConfig <- ZIO.service[ApplicationConfig]
+      res <- PersonUal.getAll
+    } yield {
+      res
+    }).provide(
+      ZLayer.apply(ZIO.attempt(MongoClients.create("mongodb://localhost:27017"))),
+      ZLayer.apply(ZIO.succeed(ApplicationConfig("testContainers", "people")))
+    )
   }
 
 }

@@ -2,3 +2,8 @@
 # ------------------
 $ curl -X POST  -H "Content-Type: application/json" -d '{ "firstName":"dushan", "lastName":"gajik", "email":"dushan.gajik@cognism.com" }' 'http://localhost:8080/people/save'
 
+# Get all people
+# ------------------
+$ curl -X GET -H "Content-Type: application/json" -d '{ "firstName":"dushan", "lastName":"gajik", "email":"dushan.gajik@cognism.com" }' 'http://localhost:8080/people'
+
+
