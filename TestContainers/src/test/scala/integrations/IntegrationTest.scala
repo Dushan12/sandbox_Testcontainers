@@ -2,11 +2,13 @@ package integrations
 
 import com.dimafeng.testcontainers.GenericContainer
 import com.dimafeng.testcontainers.GenericContainer.DockerImage
+import com.mongodb.client.MongoClients
 import config.ApplicationConfig
+import models.Person
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.images.PullPolicy
 import services.PeopleService
-import zio.test.{Spec, TestAspect, TestEnvironment, ZIOSpecDefault, assertTrue}
+import zio.test.{Spec, TestEnvironment, ZIOSpecDefault, assertTrue}
 import zio.{Scope, ZIO, ZLayer}
 
 object IntegrationTest extends ZIOSpecDefault {
@@ -25,14 +27,17 @@ object IntegrationTest extends ZIOSpecDefault {
     suite("Integration -> TestContainers -> PeopleService -> getPeople -> Specs")(
       test("check save and pull elements from database") {
         val mongodbUrl = getMongoContainer
-        for {
-          a <- PeopleService.getPeople.provide(
-            ZLayer.apply(ZIO.succeed(ApplicationConfig("testContainers", "people", mongodbUrl)))
-          )
+        (for {
+          _ <- PeopleService.savePerson(Person("Dushan", "Gajik", "gajikdushan@gmail.com"))
+          _ <- PeopleService.savePerson(Person("Dushan", "Gajik", "dushan.gajik@gmail.com"))
+          result <- PeopleService.getPeople
         } yield {
-          println(a)
-          assertTrue(true)
-        }
+          assertTrue(result.head == Person("Dushan", "Gajik", "gajikdushan@gmail.com"))
+          assertTrue(result.last == Person("Dushan", "Gajik", "dushan.gajik@gmail.com"))
+        }).provide(
+          ZLayer.apply(ZIO.succeed(ApplicationConfig("testContainers", "people", mongodbUrl))),
+          ZLayer.apply(ZIO.succeed(MongoClients.create(mongodbUrl)))
+        )
       }
     )
   }

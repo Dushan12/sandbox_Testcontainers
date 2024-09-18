@@ -11,34 +11,30 @@ import scala.collection.immutable
 
 object PersonUal {
 
-  def insertOne(person: Person): ZIO[ApplicationConfig, Throwable, Boolean] = {
-    ZIO.service[ApplicationConfig].flatMap { config =>
-      (for {
-        client <- ZIO.service[MongoClient]
-      } yield {
-        val collection = client.getDatabase(config.dbName).getCollection(config.peopleCollectionName)
-        collection.insertOne(person.toMongoObject).wasAcknowledged()
-      }).provide(
-        ZLayer.apply(ZIO.attempt(MongoClients.create(config.databaseUrl)))
-      )
+  def insertOne(person: Person): ZIO[ApplicationConfig & MongoClient, Throwable, Boolean] = {
+    for {
+      config <- ZIO.service[ApplicationConfig]
+      client <- ZIO.service[MongoClient]
+    } yield {
+      println(client)
+      val collection = client.getDatabase(config.dbName).getCollection(config.peopleCollectionName)
+      collection.insertOne(person.toMongoObject).wasAcknowledged()
     }
   }
 
-  def getAll: ZIO[ApplicationConfig, Throwable, immutable.List[Person]] = {
-    ZIO.service[ApplicationConfig].flatMap { config =>
-      (for {
-        client <- ZIO.service[MongoClient]
-      } yield {
-        val collection = client.getDatabase(config.dbName).getCollection(config.peopleCollectionName)
-        val records = collection.find().map { x => x.fromMongoObject }
-        var outRecords = List.empty[Person]
-        records.iterator().forEachRemaining { item =>
-          outRecords = outRecords ++ List(item)
-        }
-        outRecords
-      }).provide(
-        ZLayer.apply(ZIO.attempt(MongoClients.create(config.databaseUrl)))
-      )
+  def getAll: ZIO[ApplicationConfig & MongoClient, Throwable, immutable.List[Person]] = {
+    for {
+      config <- ZIO.service[ApplicationConfig]
+      client <- ZIO.service[MongoClient]
+    } yield {
+      println(client)
+      val collection = client.getDatabase(config.dbName).getCollection(config.peopleCollectionName)
+      val records = collection.find().map { x => x.fromMongoObject }
+      var outRecords = List.empty[Person]
+      records.iterator().forEachRemaining { item =>
+        outRecords = outRecords ++ List(item)
+      }
+      outRecords
     }
   }
 
