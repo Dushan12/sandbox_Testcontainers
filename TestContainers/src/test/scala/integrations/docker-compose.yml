@@ -1,0 +1,7 @@
+services:
+  web:
+    build: .
+    ports:
+      - "27017:27017"
+  redis:
+    image: "mongodb/mongodb-community-server:latest"

@@ -1,3 +1,11 @@
+# Change docker config to work without root permissions
+# Source: https://askubuntu.com/questions/477551/how-can-i-use-docker-without-sudo
+# ------------------------------------------------------
+$ sudo groupadd docker
+$ sudo gpasswd -a $USER docker
+$ sudo systemctl restart docker
+$ docker run hello-world
+
 #Pull the MongoDB Docker Image
 #------------------------------
 $ docker pull mongodb/mongodb-community-server:latest

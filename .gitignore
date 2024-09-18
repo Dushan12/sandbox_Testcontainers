@@ -9,3 +9,5 @@ hs_err_pid*
 TestContainers/.bsp/
 TestContainers/.idea/
 TestContainers/target/
+TestContainers/project/target
+TestContainers/project/project

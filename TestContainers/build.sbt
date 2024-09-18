@@ -8,22 +8,19 @@ val zioVersion = "2.1.9"
 val zioJsonVersion = "0.7.3"
 val zioHttpVersion = "3.0.0"
 val zioMongoDbVersion = "5.1.4"
+val zioTestContainersVersion = "0.5.0"
 
 val dependencies = Seq(
-  "dev.zio" %% "zio"                    % zioVersion,
-  "dev.zio" %% "zio-streams"            % zioVersion,
-  "dev.zio" %% "zio-http"               % zioHttpVersion,
-  "dev.zio" %% "zio-json"               % zioJsonVersion,
-  "org.mongodb" % "mongodb-driver-sync" % zioMongoDbVersion,
-  "dev.zio" %% "zio-test"               % zioVersion % Test,
-  "dev.zio" %% "zio-test-sbt"           % zioVersion % Test,
-  "dev.zio" %% "zio-test-magnolia"      % zioVersion % Test
+  "dev.zio"                 %% "zio"                    % zioVersion,
+  "dev.zio"                 %% "zio-streams"            % zioVersion,
+  "dev.zio"                 %% "zio-http"               % zioHttpVersion,
+  "dev.zio"                 %% "zio-json"               % zioJsonVersion,
+  "org.mongodb"             % "mongodb-driver-sync"     % zioMongoDbVersion,
+  "dev.zio"                 %% "zio-test"               % zioVersion % Test,
+  "dev.zio"                 %% "zio-test-sbt"           % zioVersion % Test,
+  "dev.zio"                 %% "zio-test-magnolia"      % zioVersion % Test,
+  "com.github.sideeffffect" %% "zio-testcontainers"     % zioTestContainersVersion % Test
 )
-
-
-
-val commonSettings =
-  Seq.empty
 
 libraryDependencies := dependencies
 

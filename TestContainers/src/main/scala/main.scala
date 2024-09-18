@@ -1,4 +1,5 @@
 
+import config.ApplicationConfig
 import models.Person
 import services.PeopleService
 import zio.http.*
@@ -25,7 +26,7 @@ object main extends ZIOAppDefault {
     (for {
       bodyStr <- req.body.asString.mapError(_.getMessage)
       parseBodyAsPerson <- ZIO.fromEither(bodyStr.fromJson[Person])
-      savedPersonResult <- PeopleService.savePerson(parseBodyAsPerson)
+      savedPersonResult <- PeopleService.savePerson(parseBodyAsPerson).provide(ZLayer.apply(ZIO.succeed(ApplicationConfig("testContainers", "people", "mongodb://localhost:27017"))))
     } yield {
       if(savedPersonResult)
         Response.text("Person saved successfully!")
@@ -44,9 +45,9 @@ object main extends ZIOAppDefault {
 
   private def getPeople(req: Request): ZIO[Any, Nothing, Response] = {
     (for {
-      personResults <- PeopleService.getPeople
+      personResults <- PeopleService.getPeople.provide(ZLayer.apply(ZIO.succeed(ApplicationConfig("testContainers", "people", "mongodb://localhost:27017"))))
     } yield {
-        Response.json(personResults.map(_.toJson).toJson.mkString(""))
+      Response.json(personResults.map(_.toJson).toJson.mkString(""))
     }).catchAll { error =>
       ZIO.succeed(Response.error(
         zio.http.Status.InternalServerError,
