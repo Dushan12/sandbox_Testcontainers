@@ -2,7 +2,7 @@ package integrations
 
 import com.dimafeng.testcontainers.GenericContainer
 import com.dimafeng.testcontainers.GenericContainer.DockerImage
-import com.mongodb.client.MongoClients
+import com.mongodb.client.{MongoClient, MongoClients}
 import config.ApplicationConfig
 import models.Person
 import org.testcontainers.containers.wait.strategy.Wait
@@ -42,7 +42,7 @@ object IntegrationTest extends ZIOSpecDefault {
             def databaseUrl = "mongodb://localhost:27017"
           }),
           ZLayer.succeed(new MongoDbClient {
-            def client = MongoClients.create(mongodbUrl)
+            def client: MongoClient = MongoClients.create(mongodbUrl)
           })
         )
       }

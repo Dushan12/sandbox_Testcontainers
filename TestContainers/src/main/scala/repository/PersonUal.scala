@@ -1,11 +1,9 @@
 package repository
 
-import com.mongodb.MongoClientSettings
-import com.mongodb.client.{MongoClient, MongoClients}
 import config.ApplicationConfig
 import models.Person
 import repository.extensions.person.{fromMongoObject, toMongoObject}
-import zio.{ZIO, ZLayer}
+import zio.ZIO
 
 import scala.collection.immutable
 
