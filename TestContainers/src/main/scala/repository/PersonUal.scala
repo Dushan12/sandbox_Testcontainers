@@ -14,7 +14,6 @@ object PersonUal {
       config <- ZIO.service[ApplicationConfig]
       client <- ZIO.service[MongoDbClient]
     } yield {
-      println(client)
       val collection = client.client.getDatabase(config.dbName).getCollection(config.peopleCollectionName)
       collection.insertOne(person.toMongoObject).wasAcknowledged()
     }
@@ -25,7 +24,6 @@ object PersonUal {
       config <- ZIO.service[ApplicationConfig]
       client <- ZIO.service[MongoDbClient]
     } yield {
-      println(client)
       val collection = client.client.getDatabase(config.dbName).getCollection(config.peopleCollectionName)
       val records = collection.find().map { x => x.fromMongoObject }
       var outRecords = List.empty[Person]

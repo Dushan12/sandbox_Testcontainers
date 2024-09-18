@@ -1,6 +1,7 @@
 package config
 
-import zio.ZLayer
+import repository.MongoDbClient
+import zio.{ZIO, ZLayer}
 
 trait ApplicationConfig {
   def dbName: String
@@ -16,4 +17,5 @@ object ApplicationConfig {
       def peopleCollectionName: String  = "people"
       def databaseUrl: String = "mongodb://localhost:27017"
     })
+
 }
