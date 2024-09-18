@@ -7,6 +7,7 @@ import config.ApplicationConfig
 import models.Person
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.images.PullPolicy
+import repository.MongoDbClient
 import services.PeopleService
 import zio.test.{Spec, TestEnvironment, ZIOSpecDefault, assertTrue}
 import zio.{Scope, ZIO, ZLayer}
@@ -35,8 +36,14 @@ object IntegrationTest extends ZIOSpecDefault {
           assertTrue(result.head == Person("Dushan", "Gajik", "gajikdushan@gmail.com"))
           assertTrue(result.last == Person("Dushan", "Gajik", "dushan.gajik@gmail.com"))
         }).provide(
-          ZLayer.apply(ZIO.succeed(ApplicationConfig("testContainers", "people", mongodbUrl))),
-          ZLayer.apply(ZIO.succeed(MongoClients.create(mongodbUrl)))
+          ZLayer.succeed(new ApplicationConfig {
+            def dbName = "testContainers"
+            def peopleCollectionName = "people"
+            def databaseUrl = "mongodb://localhost:27017"
+          }),
+          ZLayer.succeed(new MongoDbClient {
+            def client = MongoClients.create(mongodbUrl)
+          })
         )
       }
     )
