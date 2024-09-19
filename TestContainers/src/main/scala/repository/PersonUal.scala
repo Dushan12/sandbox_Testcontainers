@@ -1,6 +1,5 @@
 package repository
 
-import config.ApplicationConfig
 import models.Person
 import repository.extensions.person.{fromMongoObject, toMongoObject}
 import zio.ZIO
@@ -9,23 +8,21 @@ import scala.collection.immutable
 
 object PersonUal {
 
-  def insertOne(person: Person): ZIO[ApplicationConfig & MongoDbClient, Throwable, Boolean] = {
+  def insertOne(person: Person): ZIO[MongoDbClient, Throwable, Boolean] = {
     for {
-      config <- ZIO.service[ApplicationConfig]
       client <- ZIO.service[MongoDbClient]
     } yield {
-      val collection = client.client.getDatabase(config.dbName).getCollection(config.peopleCollectionName)
-      collection.insertOne(person.toMongoObject).wasAcknowledged()
+      println(client.client)
+      client.getPeopleCollection.insertOne(person.toMongoObject).wasAcknowledged()
     }
   }
 
-  def getAll: ZIO[ApplicationConfig & MongoDbClient, Throwable, immutable.List[Person]] = {
+  def getAll: ZIO[MongoDbClient, Throwable, immutable.List[Person]] = {
     for {
-      config <- ZIO.service[ApplicationConfig]
       client <- ZIO.service[MongoDbClient]
     } yield {
-      val collection = client.client.getDatabase(config.dbName).getCollection(config.peopleCollectionName)
-      val records = collection.find().map { x => x.fromMongoObject }
+      println(client.client)
+      val records = client.getPeopleCollection.find().map { x => x.fromMongoObject }
       var outRecords = List.empty[Person]
       records.iterator().forEachRemaining { item =>
         outRecords = outRecords ++ List(item)

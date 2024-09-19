@@ -7,11 +7,11 @@ import zio.ZIO
 
 object PeopleService {
 
-  def savePerson(person: Person): ZIO[ApplicationConfig & MongoDbClient, Throwable, Boolean] = {
+  def savePerson(person: Person): ZIO[MongoDbClient, Throwable, Boolean] = {
       PersonUal.insertOne(person)
   }
 
-  def getPeople: ZIO[ApplicationConfig & MongoDbClient, Throwable, List[Person]] = {
+  def getPeople: ZIO[MongoDbClient, Throwable, List[Person]] = {
       PersonUal.getAll
   }
 

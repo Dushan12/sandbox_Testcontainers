@@ -1,15 +1,16 @@
 
 import config.ApplicationConfig
+import extensions.*
 import models.Person
 import repository.MongoDbClient
 import services.PeopleService
 import zio.http.*
 import zio.json.*
-import zio.{Scope, URIO, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
+import zio.{Scope, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
 
 object main extends ZIOAppDefault {
 
-  private val routes: Routes[ApplicationConfig & MongoDbClient, Nothing] = {
+  private val routes: Routes[MongoDbClient, Nothing] = {
     Routes(
       Method.POST / "people/save" -> handler {
         (req: Request) =>
@@ -21,40 +22,37 @@ object main extends ZIOAppDefault {
     )
   }
 
-  private def application: URIO[ApplicationConfig & MongoDbClient & Server, Nothing] = Server.serve(routes)
-
   def run: ZIO[ZIOAppArgs & Scope, Any, Any] =  {
-    application
+    Server.serve(routes)
       .provide(
         Server.default,
-        ApplicationConfig.live,
-        MongoDbClient.live
+        ApplicationConfig.live >>> MongoDbClient.live
       )
   }
 
-  private def savePerson(req: Request): ZIO[ApplicationConfig & MongoDbClient, Nothing, Response] = {
-
+  private def savePerson(requestBody: Request): ZIO[MongoDbClient, Nothing, Response] = {
     (for {
-      bodyStr <- req.body.asString.mapError(_.getMessage)
-      parseBodyAsPerson <- ZIO.fromEither(bodyStr.fromJson[Person])
-      savedPersonResult <- PeopleService.savePerson(parseBodyAsPerson)
-    } yield {
-      if(savedPersonResult)
-        Response.text("Person saved successfully!")
-      else
-        Response.error(
+      person <- requestBody.asObject[Person]
+      savedPersonResult <- PeopleService.savePerson(person)
+      response <- ZIO.succeed({
+        if (savedPersonResult)
+          Response.text("Person saved successfully!")
+        else
+          Response.error(
+            zio.http.Status.InternalServerError,
+            s"""Failed to save person in database!"""
+          )
+      })
+    } yield (response))
+      .catchAll { error =>
+        ZIO.succeed(Response.error(
           zio.http.Status.InternalServerError,
-          s"""Failed to save person in database!"""
-        )
-    }).catchAll { error =>
-      ZIO.succeed(Response.error(
-        zio.http.Status.InternalServerError,
-        s"""Error while saving person to database: $error"""
-      ))
-    }
+          s"""Error while saving person to database: $error"""
+        ))
+      }
   }
 
-  private def getPeople(req: Request): ZIO[ApplicationConfig & MongoDbClient, Nothing, Response] = {
+  private def getPeople(requestBody: Request): ZIO[MongoDbClient, Nothing, Response] = {
     (for {
       personResults <- PeopleService.getPeople
     } yield {

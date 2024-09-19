@@ -2,14 +2,14 @@ package integrations
 
 import com.dimafeng.testcontainers.GenericContainer
 import com.dimafeng.testcontainers.GenericContainer.DockerImage
-import com.mongodb.client.{MongoClient, MongoClients}
-import config.ApplicationConfig
+import com.mongodb.client.{MongoClient, MongoClients, MongoCollection}
 import models.Person
+import org.bson.Document
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.images.PullPolicy
 import repository.MongoDbClient
 import services.PeopleService
-import zio.test.{Spec, TestAspect, TestEnvironment, ZIOSpecDefault, assertTrue}
+import zio.test.{Spec, TestEnvironment, ZIOSpecDefault, assertTrue}
 import zio.{Scope, ZIO, ZLayer}
 
 object IntegrationTest extends ZIOSpecDefault {
@@ -27,26 +27,24 @@ object IntegrationTest extends ZIOSpecDefault {
 
     suite("Integration -> TestContainers -> PeopleService -> getPeople -> Specs")(
       test("check save and pull elements from database") {
-        val mongodbUrl = getMongoContainer
         (for {
           _ <- PeopleService.savePerson(Person("Dushan", "Gajik", "gajikdushan@gmail.com"))
           _ <- PeopleService.savePerson(Person("Dushan", "Gajik", "dushan.gajik@gmail.com"))
           result <- PeopleService.getPeople
         } yield {
-          println(result)
           assertTrue(result.head == Person("Dushan", "Gajik", "gajikdushan@gmail.com"))
           assertTrue(result.last == Person("Dushan", "Gajik", "dushan.gajik@gmail.com"))
+
         }).provide(
-          ZLayer.succeed(new ApplicationConfig {
-            def dbName = "testContainers"
-            def peopleCollectionName = "people"
-            def databaseUrl = "mongodb://localhost:27017"
-          }),
           ZLayer.succeed(new MongoDbClient {
-            def client: MongoClient = MongoClients.create(mongodbUrl)
+            val client: MongoClient = MongoClients.create(getMongoContainer)
+
+            override def getPeopleCollection: MongoCollection[Document] = {
+              client.getDatabase("testContainers").getCollection("people")
+            }
           })
         )
-      } @@ TestAspect.ignore
+      }
     )
   }
 }
