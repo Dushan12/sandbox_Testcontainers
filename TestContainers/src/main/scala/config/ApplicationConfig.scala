@@ -1,6 +1,5 @@
 package config
 
-import repository.MongoDbClient
 import zio.{ZIO, ZLayer}
 
 trait ApplicationConfig {

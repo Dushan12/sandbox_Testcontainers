@@ -7,7 +7,7 @@ import models.Person
 import org.bson.Document
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.images.PullPolicy
-import repository.MongoDbClient
+import repository.PersonUal
 import services.PeopleService
 import zio.test.{Spec, TestEnvironment, ZIOSpecDefault, assertTrue}
 import zio.{Scope, ZIO, ZLayer}
@@ -36,7 +36,7 @@ object IntegrationTest extends ZIOSpecDefault {
           assertTrue(result.last == Person("Dushan", "Gajik", "dushan.gajik@gmail.com"))
 
         }).provide(
-          ZLayer.succeed(new MongoDbClient {
+          ZLayer.succeed(new PersonUal {
             val client: MongoClient = MongoClients.create(getMongoContainer)
 
             override def getPeopleCollection: MongoCollection[Document] = {

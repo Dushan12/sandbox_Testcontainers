@@ -2,7 +2,7 @@
 import config.ApplicationConfig
 import extensions.*
 import models.Person
-import repository.MongoDbClient
+import repository.PersonUal
 import services.PeopleService
 import zio.http.*
 import zio.json.*
@@ -10,7 +10,7 @@ import zio.{Scope, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
 
 object main extends ZIOAppDefault {
 
-  private val routes: Routes[MongoDbClient, Nothing] = {
+  private val routes: Routes[PersonUal, Nothing] = {
     Routes(
       Method.POST / "people/save" -> handler {
         (req: Request) =>
@@ -26,11 +26,11 @@ object main extends ZIOAppDefault {
     Server.serve(routes)
       .provide(
         Server.default,
-        ApplicationConfig.live >>> MongoDbClient.live
+        ApplicationConfig.live >>> PersonUal.live
       )
   }
 
-  private def savePerson(requestBody: Request): ZIO[MongoDbClient, Nothing, Response] = {
+  private def savePerson(requestBody: Request): ZIO[PersonUal, Nothing, Response] = {
     (for {
       person <- requestBody.asObject[Person]
       savedPersonResult <- PeopleService.savePerson(person)
@@ -52,7 +52,7 @@ object main extends ZIOAppDefault {
       }
   }
 
-  private def getPeople(requestBody: Request): ZIO[MongoDbClient, Nothing, Response] = {
+  private def getPeople(requestBody: Request): ZIO[PersonUal, Nothing, Response] = {
     (for {
       personResults <- PeopleService.getPeople
     } yield {
