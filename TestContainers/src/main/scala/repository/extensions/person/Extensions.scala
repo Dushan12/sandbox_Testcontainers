@@ -3,6 +3,8 @@ package repository.extensions.person
 import models.Person
 import org.bson.Document
 
+import java.util.UUID
+
 extension (input: Person)
   def toMongoObject: Document = {
     new Document()
@@ -14,6 +16,7 @@ extension (input: Person)
 extension (document: Document)
   def fromMongoObject: Person = {
     Person(
+      id = UUID.randomUUID().toString,
       firstName = document.getString("firstName"),
       lastName = document.getString("lastName"),
       email = document.getString("email")

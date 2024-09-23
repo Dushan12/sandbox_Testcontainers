@@ -1,14 +1,20 @@
 package repository
 
-import com.mongodb.client.{MongoClient, MongoClients, MongoCollection}
+import com.mongodb.ClientSessionOptions
+import com.mongodb.client.{ClientSession, MongoClient, MongoClients, MongoCollection}
 import config.ApplicationConfig
 import models.Person
-import org.bson.Document
+import org.bson.{BsonDocument, Document}
 import repository.extensions.person.{fromMongoObject, toMongoObject}
 import zio.{ZIO, ZLayer}
 
 import scala.collection.immutable
 
+// Inject a TransactionManager ???
+// Inject a client ???
+// If we do not want a transactional dependency then the email sending for person update should be part of the Person object
+// It needs to be filtered out when getting the person tho.
+// This way there is no transactions (Just update name, add to set a mail sending request)
 trait PersonUal {
 
   val client: MongoClient

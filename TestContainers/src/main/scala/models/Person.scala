@@ -1,10 +1,8 @@
 package models
 
-import org.bson.codecs.configuration.CodecProvider
-import org.bson.codecs.configuration.CodecRegistries.fromRegistries
 import zio.json.{DeriveJsonDecoder, DeriveJsonEncoder, JsonDecoder, JsonEncoder}
 
-case class Person(firstName: String, lastName: String, email: String)
+case class Person(id: String, firstName: String, lastName: String, email: String)
 
 object Person {
   implicit val decoder: JsonDecoder[Person] = DeriveJsonDecoder.gen[Person]
