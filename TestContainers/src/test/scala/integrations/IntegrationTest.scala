@@ -7,7 +7,7 @@ import models.Person
 import org.bson.Document
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.images.PullPolicy
-import repository.PersonUal
+import repository.PersonRepository
 import services.PeopleService
 import zio.test.{Spec, TestEnvironment, ZIOSpecDefault, assertTrue}
 import zio.{Scope, ZIO, ZLayer}
@@ -28,19 +28,23 @@ object IntegrationTest extends ZIOSpecDefault {
     suite("Integration -> TestContainers -> PeopleService -> getPeople -> Specs")(
       test("check save and pull elements from database") {
         (for {
-          _ <- PeopleService.savePerson(Person("Dushan", "Gajik", "gajikdushan@gmail.com"))
-          _ <- PeopleService.savePerson(Person("Dushan", "Gajik", "dushan.gajik@gmail.com"))
+          _ <- PeopleService.savePerson(Person("1", "Dushan", "Gajik", "gajikdushan@gmail.com"))
+          _ <- PeopleService.savePerson(Person("2", "Dushan", "Gajik", "dushan.gajik@gmail.com"))
           result <- PeopleService.getPeople
         } yield {
-          assertTrue(result.head == Person("Dushan", "Gajik", "gajikdushan@gmail.com"))
-          assertTrue(result.last == Person("Dushan", "Gajik", "dushan.gajik@gmail.com"))
+          assertTrue(result.head == Person("1", "Dushan", "Gajik", "gajikdushan@gmail.com"))
+          assertTrue(result.last == Person("2", "Dushan", "Gajik", "dushan.gajik@gmail.com"))
 
         }).provide(
-          ZLayer.succeed(new PersonUal {
+          ZLayer.succeed(new PersonRepository {
             val client: MongoClient = MongoClients.create(getMongoContainer)
 
             override def getPeopleCollection: MongoCollection[Document] = {
               client.getDatabase("testContainers").getCollection("people")
+            }
+
+            override def getEmailStatusCollection: MongoCollection[Document] = {
+              client.getDatabase("testContainers").getCollection("emailStatus")
             }
           })
         )

@@ -2,15 +2,16 @@
 import config.ApplicationConfig
 import extensions.*
 import models.Person
-import repository.PersonUal
-import services.PeopleService
+import repository.PersonRepository
+import services.{EmailService, PeopleService}
+import zio.ExecutionStrategy.Parallel
 import zio.http.*
 import zio.json.*
-import zio.{Scope, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
+import zio.{ExecutionStrategy, Scope, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
 
 object main extends ZIOAppDefault {
 
-  private val routes: Routes[PersonUal, Nothing] = {
+  private val routes: Routes[PersonRepository, Nothing] = {
     Routes(
       Method.POST / "people/save" -> handler {
         (req: Request) =>
@@ -22,15 +23,22 @@ object main extends ZIOAppDefault {
     )
   }
 
-  def run: ZIO[ZIOAppArgs & Scope, Any, Any] =  {
-    Server.serve(routes)
-      .provide(
+  def run: ZIO[ZIOAppArgs, Any, Any] =  {
+    (for {
+      emailService <- ZIO.service[EmailService]
+      scope <- ZIO.service[Scope]
+      _ <- emailService.drainingQueueAndSendMessagesWithRetry.forkIn(scope)
+      _ <- Server.serve(routes)
+    } yield ()).provide(
         Server.default,
-        ApplicationConfig.live >>> PersonUal.live
+        ApplicationConfig.live,
+        Scope.default,
+        ApplicationConfig.live >>> EmailService.live,
+        ApplicationConfig.live >>> PersonRepository.live
       )
   }
 
-  private def savePerson(requestBody: Request): ZIO[PersonUal, Nothing, Response] = {
+  private def savePerson(requestBody: Request): ZIO[PersonRepository, Nothing, Response] = {
     (for {
       person <- requestBody.asObject[Person]
       savedPersonResult <- PeopleService.savePerson(person)
@@ -52,7 +60,7 @@ object main extends ZIOAppDefault {
       }
   }
 
-  private def getPeople(requestBody: Request): ZIO[PersonUal, Nothing, Response] = {
+  private def getPeople(requestBody: Request): ZIO[PersonRepository, Nothing, Response] = {
     (for {
       personResults <- PeopleService.getPeople
     } yield {
