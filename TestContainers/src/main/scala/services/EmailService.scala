@@ -2,35 +2,39 @@ package services
 
 import config.ApplicationConfig
 import models.EmailStatus
-import zio.Console.printLine
-import zio.amqp.model.{ConsumerTag, DeliveryTag, QueueName}
-import zio.amqp.{Amqp, Channel}
-import zio.{Scope, ZIO, ZLayer}
+import repository.PersonRepository
+import zio.{Duration, Scope, ZIO, ZLayer}
 
-import java.net.URI
+import java.util.concurrent.TimeUnit
 
 trait EmailService {
 
-  def sendEmail(emailStatus: EmailStatus): ZIO[Any, Throwable, Unit]
+  private val LOCK_NAME = "main_sending_lock"
 
-  def drainingQueueAndSendMessagesWithRetry: ZIO[Scope & ApplicationConfig, Throwable, Unit] = {
-    val channel: ZIO[Scope, Throwable, Channel] = for {
-      connection <- Amqp.connect(URI.create("amqp://my_amqp_server_uri"))
-      channel <- Amqp.createChannel(connection)
-    } yield channel
+  private def sendEmail(emailStatus: EmailStatus): ZIO[Any, Throwable, Unit] = {
 
-    channel.flatMap { channel =>
-      channel
-        .consume(queue = QueueName("queueName"), consumerTag = ConsumerTag("test"))
-        .mapZIO { record =>
-          val deliveryTag = record.getEnvelope.getDeliveryTag
-          sendEmail(null)
-            .flatMap {_ =>
-            channel.ack(DeliveryTag(deliveryTag))
-          }
+    // try to send email
+    // if email sending is done update success and errors to database
+    ZIO.succeed(())
+  }
 
-        }
-        .runDrain
+  def drainingQueueAndSendMessagesWithRetry: ZIO[PersonRepository & RedisDatabase, Throwable, Unit] = {
+    for {
+      personRepository <- ZIO.service[PersonRepository]
+      redisDatabase <- ZIO.service[RedisDatabase]
+      _ <- redisDatabase.acquireLock(LOCK_NAME, Duration.apply(5, TimeUnit.MINUTES).toMillis)
+      emails <- personRepository.getAllEmailsPending
+      _ <- ZIO.collectAll(emails.map { email =>
+        sendEmail(email)
+      }).catchAll { _ =>
+        // log failed while sending errors
+        // catch errors here to make sure we do not block the lock release
+        ZIO.succeed(())
+      }
+      // if the process fails it will not release the lock
+      _ <- redisDatabase.releaseLock(LOCK_NAME)
+    } yield {
+      ()
     }
   }
 
@@ -38,12 +42,6 @@ trait EmailService {
 
 object EmailService {
   val live: ZLayer[ApplicationConfig, Nothing, EmailService] = {
-    ZLayer.service[ApplicationConfig].project(config => new EmailService {
-
-      override def sendEmail(emailStatus: EmailStatus): ZIO[Any, Throwable, Unit] = {
-        ZIO.succeed(())
-      }
-
-    })
+    ZLayer.service[ApplicationConfig].project(config => new EmailService {})
   }
 }

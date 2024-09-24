@@ -18,8 +18,6 @@ val dependencies = Seq(
   "dev.zio"                 %% "zio-http"               % zioHttpVersion,
   "dev.zio"                 %% "zio-json"               % zioJsonVersion,
   "org.mongodb"             % "mongodb-driver-sync"     % zioMongoDbVersion,
-  "org.apache.pekko"        %% "pekko-actor-typed"      % zioPekkoVersion,
-  "dev.zio"                 %% "zio-amqp"               % zioAmqpVersion,
   "dev.zio"                 %% "zio-test"               % zioVersion % Test,
   "dev.zio"                 %% "zio-test-sbt"           % zioVersion % Test,
   "dev.zio"                 %% "zio-test-magnolia"      % zioVersion % Test,

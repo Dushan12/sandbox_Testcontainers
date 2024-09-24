@@ -13,3 +13,11 @@ $ docker pull mongodb/mongodb-community-server:latest
 #Run the image as container
 #------------------------------
 $ docker run --name mongodb -p 27017:27017 -d mongodb/mongodb-community-server:latest
+
+#Reddis container for docker
+#------------------------------
+$ docker run -d --name redis-stack-server -p 6379:6379 redis/redis-stack-server:latest
+
+#Connect to redis CLI
+#------------------------------
+$ docker exec -it [CONTAINER_ID] redis-cli

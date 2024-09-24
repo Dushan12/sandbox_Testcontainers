@@ -3,11 +3,13 @@ import config.ApplicationConfig
 import extensions.*
 import models.Person
 import repository.PersonRepository
-import services.{EmailService, PeopleService}
+import services.{EmailService, PeopleService, RedisDatabase}
 import zio.ExecutionStrategy.Parallel
 import zio.http.*
 import zio.json.*
-import zio.{ExecutionStrategy, Scope, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
+import zio.{Duration, ExecutionStrategy, Schedule, Scope, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
+
+import java.time.temporal.ChronoUnit
 
 object main extends ZIOAppDefault {
 
@@ -27,12 +29,12 @@ object main extends ZIOAppDefault {
     (for {
       emailService <- ZIO.service[EmailService]
       scope <- ZIO.service[Scope]
-      _ <- emailService.drainingQueueAndSendMessagesWithRetry.forkIn(scope)
+      _ <- emailService.drainingQueueAndSendMessagesWithRetry.repeat(Schedule.fixed(Duration.apply(1, ChronoUnit.MINUTES))).forkIn(scope)
       _ <- Server.serve(routes)
     } yield ()).provide(
         Server.default,
-        ApplicationConfig.live,
         Scope.default,
+        ApplicationConfig.live >>> RedisDatabase.live,
         ApplicationConfig.live >>> EmailService.live,
         ApplicationConfig.live >>> PersonRepository.live
       )

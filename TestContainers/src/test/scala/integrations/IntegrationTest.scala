@@ -3,6 +3,7 @@ package integrations
 import com.dimafeng.testcontainers.GenericContainer
 import com.dimafeng.testcontainers.GenericContainer.DockerImage
 import com.mongodb.client.{MongoClient, MongoClients, MongoCollection}
+import config.ApplicationConfig
 import models.Person
 import org.bson.Document
 import org.testcontainers.containers.wait.strategy.Wait
@@ -38,6 +39,13 @@ object IntegrationTest extends ZIOSpecDefault {
         }).provide(
           ZLayer.succeed(new PersonRepository {
             val client: MongoClient = MongoClients.create(getMongoContainer)
+
+            val config: ApplicationConfig = new ApplicationConfig {
+              def dbName: String = "testContainers"
+              def peopleCollectionName: String  = "people"
+              def emailStatusCollectionName: String  = "emailStatus"
+              def databaseUrl: String = "mongodb://localhost:27017"
+            }
 
             override def getPeopleCollection: MongoCollection[Document] = {
               client.getDatabase("testContainers").getCollection("people")
