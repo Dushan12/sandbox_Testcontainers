@@ -28,12 +28,10 @@ object main extends ZIOAppDefault {
   def run: ZIO[ZIOAppArgs, Any, Any] =  {
     (for {
       emailService <- ZIO.service[EmailService]
-      scope <- ZIO.service[Scope]
-      _ <- emailService.drainingQueueAndSendMessagesWithRetry.repeat(Schedule.fixed(Duration.apply(1, ChronoUnit.MINUTES))).forkIn(scope)
+      _ <- emailService.drainingQueueAndSendMessagesWithRetry.repeat(Schedule.fixed(Duration.apply(1, ChronoUnit.MINUTES))).forkDaemon
       _ <- Server.serve(routes)
     } yield ()).provide(
         Server.default,
-        Scope.default,
         ApplicationConfig.live >>> RedisDatabase.live,
         ApplicationConfig.live >>> EmailService.live,
         ApplicationConfig.live >>> PersonRepository.live
