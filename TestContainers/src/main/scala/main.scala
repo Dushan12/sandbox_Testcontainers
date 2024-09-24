@@ -28,6 +28,9 @@ object main extends ZIOAppDefault {
   def run: ZIO[ZIOAppArgs, Any, Any] =  {
     (for {
       emailService <- ZIO.service[EmailService]
+      /*
+      API instances are running daemons for mail sending
+       */
       _ <- emailService.drainingQueueAndSendMessagesWithRetry.repeat(Schedule.fixed(Duration.apply(1, ChronoUnit.MINUTES))).forkDaemon
       _ <- Server.serve(routes)
     } yield ()).provide(
