@@ -72,12 +72,14 @@ object EmailSendingMechanismIntegration extends ZIOSpecDefault {
             _ <- PeopleService.updatePerson("4", "Dushan")
             result <- PeopleService.getPeople
             results <- emailService.drainingQueueAndSendMessagesWithRetry
+            resultsAfter <- emailService.drainingQueueAndSendMessagesWithRetry
           } yield {
             container1.stop()
             container2.stop()
             assertTrue(result.head == Person("1", "Dushan", "Gajik", "gajikdushan@gmail.com"))
             assertTrue(result.length == 1)
             assertTrue(results == 4)
+            assertTrue(resultsAfter == 0)
           }).provide(
             ApplicationConfig.live,
             ZLayer.succeed(new RedisConfig(
@@ -149,12 +151,14 @@ object EmailSendingMechanismIntegration extends ZIOSpecDefault {
           _ <- PeopleService.updatePerson("4", "Dushan")
           result <- PeopleService.getPeople
           results <- emailService.drainingQueueAndSendMessagesWithRetry
+          resultsAfter <- emailService.drainingQueueAndSendMessagesWithRetry
         } yield {
           container1.stop()
           container2.stop()
           assertTrue(result.head == Person("1", "Dushan", "Gajik", "gajikdushan@gmail.com"))
           assertTrue(result.length == 1)
           assertTrue(results == 0)
+          assertTrue(resultsAfter == 0)
         }).provide(
           ApplicationConfig.live,
           ZLayer.succeed(new RedisConfig(

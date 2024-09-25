@@ -42,7 +42,7 @@ trait PersonRepository {
 
   def getAllEmailsPending: ZIO[Any, Throwable, List[EmailStatus]] = {
        ZIO.attempt {
-         val records = getPeopleCollection.find().map { x => x.fromEmailStatusMongoObject }
+         val records = getPeopleCollection.find(BsonDocument("status", BsonString("PENDING"))).map { x => x.fromEmailStatusMongoObject }
          var outRecords = List.empty[EmailStatus]
          records.iterator().forEachRemaining { item =>
            outRecords = outRecords ++ List(item)
