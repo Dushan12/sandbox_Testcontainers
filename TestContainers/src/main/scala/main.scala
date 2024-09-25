@@ -4,14 +4,35 @@ import extensions.*
 import models.Person
 import repository.PersonRepository
 import services.{EmailService, PeopleService, RedisDatabase}
-import zio.ExecutionStrategy.Parallel
 import zio.http.*
 import zio.json.*
-import zio.{Duration, ExecutionStrategy, Schedule, Scope, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
+import zio.redis.{CodecSupplier, Redis}
+import zio.schema.Schema
+import zio.schema.codec.{BinaryCodec, ProtobufCodec}
+import zio.{Duration, Schedule, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
 
 import java.time.temporal.ChronoUnit
 
 object main extends ZIOAppDefault {
+
+
+  def run: ZIO[ZIOAppArgs, Any, Any] = {
+    (for {
+      emailService <- ZIO.service[EmailService]
+      _ <- emailService.drainingQueueAndSendMessagesWithRetry.repeat(Schedule.fixed(Duration.apply(1, ChronoUnit.MINUTES))).forkDaemon
+      _ <- Server.serve(routes)
+    } yield ()).provide(
+      Server.default,
+      ZLayer.succeed[CodecSupplier](ProtobufCodecSupplier) >>> Redis.local,
+      ApplicationConfig.live >>> RedisDatabase.live,
+      ApplicationConfig.live >>> EmailService.live,
+      ApplicationConfig.live >>> PersonRepository.live
+    )
+  }
+
+  private object ProtobufCodecSupplier extends CodecSupplier {
+    def get[A: Schema]: BinaryCodec[A] = ProtobufCodec.protobufCodec
+  }
 
   private val routes: Routes[PersonRepository, Nothing] = {
     Routes(
@@ -25,21 +46,7 @@ object main extends ZIOAppDefault {
     )
   }
 
-  def run: ZIO[ZIOAppArgs, Any, Any] =  {
-    (for {
-      emailService <- ZIO.service[EmailService]
-      /*
-      API instances are running daemons for mail sending
-       */
-      _ <- emailService.drainingQueueAndSendMessagesWithRetry.repeat(Schedule.fixed(Duration.apply(1, ChronoUnit.MINUTES))).forkDaemon
-      _ <- Server.serve(routes)
-    } yield ()).provide(
-        Server.default,
-        ApplicationConfig.live >>> RedisDatabase.live,
-        ApplicationConfig.live >>> EmailService.live,
-        ApplicationConfig.live >>> PersonRepository.live
-      )
-  }
+
 
   private def savePerson(requestBody: Request): ZIO[PersonRepository, Nothing, Response] = {
     (for {

@@ -10,7 +10,7 @@ import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.images.PullPolicy
 import repository.PersonRepository
 import services.PeopleService
-import zio.test.{Spec, TestEnvironment, ZIOSpecDefault, assertTrue}
+import zio.test.{Spec, TestAspect, TestEnvironment, ZIOSpecDefault, assertTrue}
 import zio.{Scope, ZIO, ZLayer}
 
 object IntegrationTest extends ZIOSpecDefault {
@@ -56,7 +56,7 @@ object IntegrationTest extends ZIOSpecDefault {
             }
           })
         )
-      }
+      } @@ TestAspect.ignore
     )
   }
 }

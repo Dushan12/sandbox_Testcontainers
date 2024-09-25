@@ -1,13 +1,14 @@
 package repository
 
-import com.mongodb.ClientSessionOptions
+import com.mongodb.client.result.UpdateResult
 import com.mongodb.client.{ClientSession, MongoClient, MongoClients, MongoCollection}
 import config.ApplicationConfig
 import models.{EmailStatus, Person}
 import org.bson.{BsonDocument, BsonString, Document}
+import repository.extensions.emailstatus.*
 import repository.extensions.person.{fromMongoObject, toMongoObject}
-import repository.extensions.emailstatus._
 import zio.{ZIO, ZLayer}
+
 import scala.collection.immutable
 
 trait PersonRepository {
@@ -50,13 +51,21 @@ trait PersonRepository {
        }
   }
 
+  def updateEmailStatus(id: String, newStatus: String): ZIO[Any, Nothing, Boolean] = {
+      for {
+        collection <- ZIO.succeed(getEmailStatusCollection)
+      } yield {
+        collection.updateOne(BsonDocument("id", BsonString(id)), BsonDocument("$set", BsonDocument("status", BsonString(newStatus)))).wasAcknowledged()
+      }
+  }
+
   def updatePersonAndStoreEmailRequest(id: String, firstName: String): ZIO[Any, Throwable, Unit] = {
     ZIO.attempt {
       for {
         session <- ZIO.succeed(client.startSession())
         collection <- ZIO.succeed(getPeopleCollection)
         _ <- ZIO.succeed(collection.updateOne(session, BsonDocument("id", BsonString(id)), BsonDocument("$set", BsonDocument("firstName", BsonString(firstName)))))
-        _ <- ZIO.succeed(collection.insertOne(EmailStatus(personId = id, requestedAt = System.currentTimeMillis(), status = "PENDING").toEmailStatusMongoObject))
+        _ <- ZIO.succeed(collection.insertOne(EmailStatus(id = "1", personId = id, requestedAt = System.currentTimeMillis(), status = "PENDING").toEmailStatusMongoObject))
       } yield {
         session.commitTransaction()
       }

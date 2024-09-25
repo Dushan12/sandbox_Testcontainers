@@ -24,7 +24,7 @@ object PeopleService {
     }
   }
 
-  def updatePerson(id: String, firstName: String): ZIO[PersonRepository & EmailService, Nothing, Unit] = {
+  def updatePerson(id: String, firstName: String): ZIO[PersonRepository, Nothing, Unit] = {
     for {
       personRepository <- ZIO.service[PersonRepository]
     } yield {

@@ -9,8 +9,8 @@ val zioJsonVersion = "0.7.3"
 val zioHttpVersion = "3.0.0"
 val zioMongoDbVersion = "5.1.4"
 val zioTestContainersVersion = "0.5.0"
-val zioAmqpVersion = "1.0.0"
-val zioPekkoVersion = "1.1.1"
+val zioRedis = "1.0.0"
+val zioSchemaProtobuf = "0.4.9"
 
 val dependencies = Seq(
   "dev.zio"                 %% "zio"                    % zioVersion,
@@ -18,6 +18,8 @@ val dependencies = Seq(
   "dev.zio"                 %% "zio-http"               % zioHttpVersion,
   "dev.zio"                 %% "zio-json"               % zioJsonVersion,
   "org.mongodb"             % "mongodb-driver-sync"     % zioMongoDbVersion,
+  "dev.zio"                 %% "zio-redis"              % zioRedis,
+  "dev.zio"                 %% "zio-schema-protobuf"    % zioSchemaProtobuf,
   "dev.zio"                 %% "zio-test"               % zioVersion % Test,
   "dev.zio"                 %% "zio-test-sbt"           % zioVersion % Test,
   "dev.zio"                 %% "zio-test-magnolia"      % zioVersion % Test,

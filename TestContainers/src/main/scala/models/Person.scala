@@ -9,7 +9,7 @@ object Person {
   implicit val encoder: JsonEncoder[Person] = DeriveJsonEncoder.gen[Person]
 }
 
-case class EmailStatus(personId: String, requestedAt: Long, status: String)
+case class EmailStatus(id: String, personId: String, requestedAt: Long, status: String)
 
 object EmailStatus {
   implicit val decoder: JsonDecoder[EmailStatus] = DeriveJsonDecoder.gen[EmailStatus]
