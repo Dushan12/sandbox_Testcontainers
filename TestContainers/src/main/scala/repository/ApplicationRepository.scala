@@ -11,7 +11,7 @@ import zio.{ZIO, ZLayer}
 
 import scala.collection.immutable
 
-trait PersonRepository {
+trait ApplicationRepository {
 
   val client: MongoClient
   val config: ApplicationConfig
@@ -73,10 +73,10 @@ trait PersonRepository {
   }
 }
 
-object PersonRepository {
-  val live: ZLayer[ApplicationConfig, Nothing, PersonRepository] = {
-    ZLayer.service[ApplicationConfig].project(config => new PersonRepository {
-      val config: ApplicationConfig = config
+object ApplicationRepository {
+  val live: ZLayer[ApplicationConfig, Nothing, ApplicationRepository] = {
+    ZLayer.service[ApplicationConfig].project(configEnv => new ApplicationRepository {
+      val config: ApplicationConfig = configEnv
       val client: MongoClient = MongoClients.create(config.databaseUrl)
     })
   }

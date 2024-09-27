@@ -1,35 +1,33 @@
 package services
 
+import config.ApplicationConfig
 import models.Person
-import repository.PersonRepository
-import zio.ZIO
+import repository.ApplicationRepository
+import zio.{ZIO, ZLayer}
+
+trait PeopleService {
+
+  val personRepository: ApplicationRepository
+
+  def savePerson(person: Person): ZIO[Any, Throwable, Boolean] = {
+    personRepository.insertOne(person)
+  }
+
+  def getPeople: ZIO[Any, Throwable, List[Person]] = {
+    personRepository.getAll
+  }
+
+  def updatePerson(id: String, firstName: String): ZIO[Any, Throwable, Unit] = {
+    personRepository.updatePersonAndStoreEmailRequest(id, firstName)
+  }
+
+}
+
 
 object PeopleService {
-
-  def savePerson(person: Person): ZIO[PersonRepository, Throwable, Boolean] = {
-    for {
-      personUal <- ZIO.service[PersonRepository]
-      insertOneResult <- personUal.insertOne(person)
-    } yield {
-      insertOneResult
-    }
+  val live: ZLayer[ApplicationRepository, Nothing, PeopleService] = {
+    ZLayer.service[ApplicationRepository].project(personRepositoryInj => new PeopleService {
+      val personRepository: ApplicationRepository = personRepositoryInj
+    })
   }
-
-  def getPeople: ZIO[PersonRepository, Throwable, List[Person]] = {
-    for {
-      personUal <- ZIO.service[PersonRepository]
-      results <- personUal.getAll
-    } yield {
-      results
-    }
-  }
-
-  def updatePerson(id: String, firstName: String): ZIO[PersonRepository, Nothing, Unit] = {
-    for {
-      personRepository <- ZIO.service[PersonRepository]
-    } yield {
-      personRepository.updatePersonAndStoreEmailRequest(id, firstName)
-    }
-  }
-
 }

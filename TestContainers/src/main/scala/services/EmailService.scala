@@ -2,8 +2,8 @@ package services
 
 import config.ApplicationConfig
 import models.EmailStatus
-import repository.PersonRepository
-import zio.{Duration, Scope, ZIO, ZLayer}
+import repository.ApplicationRepository
+import zio.{Duration, ZIO, ZLayer}
 
 import java.util.concurrent.TimeUnit
 
@@ -18,9 +18,9 @@ trait EmailService {
     ZIO.succeed(())
   }
 
-  def drainingQueueAndSendMessagesWithRetry: ZIO[PersonRepository & RedisDatabase, Throwable, Long] = {
-    for {
-      personRepository <- ZIO.service[PersonRepository]
+  def drainingQueueAndSendMessagesWithRetry: ZIO[RedisDatabase & ApplicationRepository, Nothing, Int] = {
+    (for {
+      personRepository <- ZIO.service[ApplicationRepository]
       redisDatabase <- ZIO.service[RedisDatabase]
       _ <- redisDatabase.acquireLock(LOCK_NAME, Duration.apply(5, TimeUnit.MINUTES).toMillis)
       emails <- personRepository.getAllEmailsPending
@@ -41,7 +41,11 @@ trait EmailService {
       // if the process fails it will not release the lock
       _ <- redisDatabase.releaseLock(LOCK_NAME)
     } yield {
+      println("FINISHED")
       totalSuccessCount
+    }).catchAll { _ =>
+      println("ERROR")
+      ZIO.succeed(0)
     }
   }
 

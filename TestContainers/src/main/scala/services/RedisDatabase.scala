@@ -2,7 +2,13 @@ package services
 
 import zio.{ZIO, ZLayer}
 import zio.redis.Redis
+import zio.redis.{CodecSupplier, Redis}
+import zio.schema.Schema
+import zio.schema.codec.{BinaryCodec, ProtobufCodec}
 
+object ProtobufCodecSupplier extends CodecSupplier {
+  def get[A: Schema]: BinaryCodec[A] = ProtobufCodec.protobufCodec
+}
 
 trait RedisDatabase {
 

@@ -1,9 +1,7 @@
 package repository.extensions.emailstatus
 
-import models.{EmailStatus, Person}
+import models.EmailStatus
 import org.bson.Document
-
-import java.util.UUID
 
 extension (input: EmailStatus)
   def toEmailStatusMongoObject: Document = {

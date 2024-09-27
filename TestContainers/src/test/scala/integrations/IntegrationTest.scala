@@ -8,7 +8,7 @@ import models.Person
 import org.bson.Document
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.images.PullPolicy
-import repository.PersonRepository
+import repository.ApplicationRepository
 import services.PeopleService
 import zio.test.{Spec, TestAspect, TestEnvironment, ZIOSpecDefault, assertTrue}
 import zio.{Scope, ZIO, ZLayer}
@@ -19,32 +19,33 @@ object IntegrationTest extends ZIOSpecDefault {
     suite("Integration -> TestContainers -> PeopleService -> getPeople -> Specs")(
       test("check save and pull elements from database") {
 
-        val container = GenericContainer.Def(
-          "mongodb/mongodb-community-server:5.0.21-ubuntu2004",
-          exposedPorts = Seq(27017),
-          waitStrategy = Wait.defaultWaitStrategy(),
-          imagePullPolicy = PullPolicy.defaultPolicy()
-        ).start()
-        val mongoDbUrl = "mongodb://" + container.host + ":" + container.mappedPort(container.exposedPorts.head)
+        val applicationRepositoryLayer = ZLayer.succeed {
 
-        (for {
-          _ <- PeopleService.savePerson(Person("1", "Dushan", "Gajik", "gajikdushan@gmail.com"))
-          _ <- PeopleService.savePerson(Person("2", "Dushan", "Gajik", "dushan.gajik@gmail.com"))
-          result <- PeopleService.getPeople
-        } yield {
-          container.stop()
-          assertTrue(result.head == Person("1", "Dushan", "Gajik", "gajikdushan@gmail.com"))
-          assertTrue(result.last == Person("2", "Dushan", "Gajik", "dushan.gajik@gmail.com"))
+          val container2def = GenericContainer.Def(
+            "mongodb/mongodb-community-server:5.0.21-ubuntu2004",
+            exposedPorts = Seq(27017),
+            waitStrategy = Wait.defaultWaitStrategy(),
+            imagePullPolicy = PullPolicy.defaultPolicy()
+          )
+          val container2 = container2def.start()
 
-        }).provide(
-          ZLayer.succeed(new PersonRepository {
-            val client: MongoClient = MongoClients.create(mongoDbUrl)
+
+          val mongoUri = "mongodb://" + container2.host + ":" + container2.mappedPort(container2.exposedPorts.head)
+
+
+
+          new ApplicationRepository {
+
+            val client: MongoClient = MongoClients.create(mongoUri)
 
             val config: ApplicationConfig = new ApplicationConfig {
-              def dbName: String = "testContainers"
-              def peopleCollectionName: String  = "people"
-              def emailStatusCollectionName: String  = "emailStatus"
-              def databaseUrl: String = "mongodb://localhost:27017"
+              val dbName: String = "testContainers"
+
+              val peopleCollectionName: String = "people"
+
+              val emailStatusCollectionName: String = "emailStatus"
+
+              val databaseUrl: String = "mongodb://localhost:27017"
             }
 
             override def getPeopleCollection: MongoCollection[Document] = {
@@ -54,7 +55,21 @@ object IntegrationTest extends ZIOSpecDefault {
             override def getEmailStatusCollection: MongoCollection[Document] = {
               client.getDatabase("testContainers").getCollection("emailStatus")
             }
-          })
+
+          }
+        }
+
+        (for {
+          peopleService <- ZIO.service[PeopleService]
+          _ <- peopleService.savePerson(Person("1", "Dushan", "Gajik", "gajikdushan@gmail.com"))
+          _ <- peopleService.savePerson(Person("2", "Dushan", "Gajik", "dushan.gajik@gmail.com"))
+          result <- peopleService.getPeople
+        } yield {
+          assertTrue(result.head == Person("1", "Dushan", "Gajik", "gajikdushan@gmail.com"))
+          assertTrue(result.last == Person("2", "Dushan", "Gajik", "dushan.gajik@gmail.com"))
+
+        }).provide(
+          applicationRepositoryLayer >>> PeopleService.live
         )
       }
     )

@@ -2,16 +2,14 @@
 import config.ApplicationConfig
 import extensions.*
 import models.Person
-import repository.PersonRepository
+import repository.ApplicationRepository
 import services.{EmailService, PeopleService, RedisDatabase}
 import zio.http.*
 import zio.json.*
 import zio.redis.{CodecSupplier, Redis}
-import zio.schema.Schema
-import zio.schema.codec.{BinaryCodec, ProtobufCodec}
 import zio.{Duration, Schedule, ZIO, ZIOAppArgs, ZIOAppDefault, ZLayer}
 
-import java.time.temporal.ChronoUnit
+import java.util.concurrent.TimeUnit
 
 object main extends ZIOAppDefault {
 
@@ -19,22 +17,21 @@ object main extends ZIOAppDefault {
   def run: ZIO[ZIOAppArgs, Any, Any] = {
     (for {
       emailService <- ZIO.service[EmailService]
-      _ <- emailService.drainingQueueAndSendMessagesWithRetry.repeat(Schedule.fixed(Duration.apply(1, ChronoUnit.MINUTES))).forkDaemon
+      _ <- emailService.drainingQueueAndSendMessagesWithRetry.repeat(Schedule.fixed(Duration(1, TimeUnit.SECONDS))).forkDaemon
       _ <- Server.serve(routes)
     } yield ()).provide(
       Server.default,
-      ZLayer.succeed[CodecSupplier](ProtobufCodecSupplier) >>> Redis.local,
+      ZLayer.succeed[CodecSupplier](services.ProtobufCodecSupplier) >>> Redis.local,
       ApplicationConfig.live >>> RedisDatabase.live,
       ApplicationConfig.live >>> EmailService.live,
-      ApplicationConfig.live >>> PersonRepository.live
+      ApplicationConfig.live >>> ApplicationRepository.live,
+      ApplicationConfig.live >>> ApplicationRepository.live >>> PeopleService.live
     )
   }
 
-  private object ProtobufCodecSupplier extends CodecSupplier {
-    def get[A: Schema]: BinaryCodec[A] = ProtobufCodec.protobufCodec
-  }
 
-  private val routes: Routes[PersonRepository, Nothing] = {
+
+  private val routes: Routes[PeopleService, Nothing] = {
     Routes(
       Method.POST / "people/save" -> handler {
         (req: Request) =>
@@ -48,10 +45,11 @@ object main extends ZIOAppDefault {
 
 
 
-  private def savePerson(requestBody: Request): ZIO[PersonRepository, Nothing, Response] = {
+  private def savePerson(requestBody: Request): ZIO[PeopleService, Nothing, Response] = {
     (for {
       person <- requestBody.asObject[Person]
-      savedPersonResult <- PeopleService.savePerson(person)
+      peopleService <- ZIO.service[PeopleService]
+      savedPersonResult <- peopleService.savePerson(person)
       response <- ZIO.succeed({
         if (savedPersonResult)
           Response.text("Person saved successfully!")
@@ -70,9 +68,10 @@ object main extends ZIOAppDefault {
       }
   }
 
-  private def getPeople(requestBody: Request): ZIO[PersonRepository, Nothing, Response] = {
+  private def getPeople(requestBody: Request): ZIO[PeopleService, Nothing, Response] = {
     (for {
-      personResults <- PeopleService.getPeople
+      peopleService <- ZIO.service[PeopleService]
+      personResults <- peopleService.getPeople
     } yield {
       Response.json(personResults.map(_.toJson).toJson.mkString(""))
     }).catchAll { error =>
