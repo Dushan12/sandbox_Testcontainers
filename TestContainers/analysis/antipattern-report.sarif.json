@@ -1,0 +1,375 @@
+{
+  "version": "2.1.0",
+  "$schema": "http://json.schemastore.org/sarif-2.1.0-rtm.5",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "AI Linter",
+          "rules": [
+            {
+              "id": "data transfer objects used for many things",
+              "shortDescription": {
+                "text": "data transfer objects used for many things"
+              }
+            },
+            {
+              "id": "debth of abstraction",
+              "shortDescription": {
+                "text": "debth of abstraction"
+              }
+            },
+            {
+              "id": "full object update",
+              "shortDescription": {
+                "text": "full object update"
+              }
+            },
+            {
+              "id": "metalinguistic abstraction",
+              "shortDescription": {
+                "text": "metalinguistic abstraction"
+              }
+            },
+            {
+              "id": "missing atomicity",
+              "shortDescription": {
+                "text": "missing atomicity"
+              }
+            },
+            {
+              "id": "missing projection",
+              "shortDescription": {
+                "text": "missing projection"
+              }
+            },
+            {
+              "id": "N+1 query execution",
+              "shortDescription": {
+                "text": "N+1 query execution"
+              }
+            },
+            {
+              "id": "number of dependencies",
+              "shortDescription": {
+                "text": "number of dependencies"
+              }
+            },
+            {
+              "id": "read after update",
+              "shortDescription": {
+                "text": "read after update"
+              }
+            },
+            {
+              "id": "side effects",
+              "shortDescription": {
+                "text": "side effects"
+              }
+            },
+            {
+              "id": "streaming",
+              "shortDescription": {
+                "text": "streaming"
+              }
+            },
+            {
+              "id": "unnecessary interfaces",
+              "shortDescription": {
+                "text": "unnecessary interfaces"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "N+1 query execution",
+          "level": "error",
+          "message": {
+            "text": "The drainingQueueAndSendMessagesWithRetry method fetches all pending emails and then iterates over them with individual database updates. For N emails, this executes 2N update queries (updateEmailStatus called twice per email) instead of using batch updates."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/scala/services/EmailService.scala"
+                },
+                "region": {
+                  "startLine": 27,
+                  "startColumn": 7,
+                  "endLine": 39,
+                  "endColumn": 8
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "missing atomicity",
+          "level": "error",
+          "message": {
+            "text": "The email processing pipeline has no transactional guarantees. It updates status to PENDING, attempts to send email, then updates to DONE. If email sending fails, status remains PENDING but email may have been partially processed. Lock is only released at the end - if process crashes, lock remains held indefinitely."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/scala/services/EmailService.scala"
+                },
+                "region": {
+                  "startLine": 21,
+                  "startColumn": 3,
+                  "endLine": 49,
+                  "endColumn": 4
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "missing atomicity",
+          "level": "error",
+          "message": {
+            "text": "The updatePersonAndStoreEmailRequest method has broken transaction logic. The inner for-comprehension creates ZIO effects that are wrapped in ZIO.attempt but never actually executed - the ZIO.succeed calls create new ZIO values that are immediately discarded, so the session, update, and insert operations never run."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/scala/repository/ApplicationRepository.scala"
+                },
+                "region": {
+                  "startLine": 62,
+                  "startColumn": 3,
+                  "endLine": 73,
+                  "endColumn": 4
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unnecessary interfaces",
+          "level": "error",
+          "message": {
+            "text": "PeopleService trait has only one implementation created via ZLayer.project. The interface adds cognitive overhead without providing polymorphism benefits."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/scala/services/PeopleService.scala"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 1,
+                  "endLine": 24,
+                  "endColumn": 2
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unnecessary interfaces",
+          "level": "error",
+          "message": {
+            "text": "EmailService trait has only one implementation created via ZLayer.project. The interface adds cognitive overhead without providing polymorphism benefits."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/scala/services/EmailService.scala"
+                },
+                "region": {
+                  "startLine": 10,
+                  "startColumn": 1,
+                  "endLine": 52,
+                  "endColumn": 2
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unnecessary interfaces",
+          "level": "error",
+          "message": {
+            "text": "RedisDatabase trait has only one implementation created via ZLayer.project. The interface adds cognitive overhead without providing polymorphism benefits."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/scala/services/RedisDatabase.scala"
+                },
+                "region": {
+                  "startLine": 13,
+                  "startColumn": 1,
+                  "endLine": 33,
+                  "endColumn": 2
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unnecessary interfaces",
+          "level": "error",
+          "message": {
+            "text": "ApplicationRepository trait has only one implementation created via ZLayer.project. The interface adds cognitive overhead without providing polymorphism benefits."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/scala/repository/ApplicationRepository.scala"
+                },
+                "region": {
+                  "startLine": 14,
+                  "startColumn": 1,
+                  "endLine": 74,
+                  "endColumn": 2
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "unnecessary interfaces",
+          "level": "error",
+          "message": {
+            "text": "ApplicationConfig trait has only one implementation created via ZLayer.succeed. The interface adds cognitive overhead without providing polymorphism benefits."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/scala/config/ApplicationConfig.scala"
+                },
+                "region": {
+                  "startLine": 5,
+                  "startColumn": 1,
+                  "endLine": 10,
+                  "endColumn": 2
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "side effects",
+          "level": "error",
+          "message": {
+            "text": "The acquireLock method has a bug where it returns a ZIO that yields another ZIO which is discarded. It side-effects on Redis by calling setNx, but the conditional logic creates new ZIO.succeed/ZIO.fail values that are never executed. The function always succeeds even when lock acquisition actually fails, causing silent failures in concurrent scenarios."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/scala/services/RedisDatabase.scala"
+                },
+                "region": {
+                  "startLine": 17,
+                  "startColumn": 3,
+                  "endLine": 26,
+                  "endColumn": 4
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "streaming",
+          "level": "error",
+          "message": {
+            "text": "The getAll method loads all Person records into memory using mutable accumulation with inefficient list concatenation (outRecords ++ List(item)). This could bloat container memory with large datasets and has O(n^2) complexity due to list append operations."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/scala/repository/ApplicationRepository.scala"
+                },
+                "region": {
+                  "startLine": 31,
+                  "startColumn": 3,
+                  "endLine": 40,
+                  "endColumn": 4
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "streaming",
+          "level": "error",
+          "message": {
+            "text": "The getAllEmailsPending method loads all EmailStatus records into memory using mutable accumulation with inefficient list concatenation. This could bloat container memory with large datasets and has O(n^2) complexity due to list append operations."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/scala/repository/ApplicationRepository.scala"
+                },
+                "region": {
+                  "startLine": 43,
+                  "startColumn": 3,
+                  "endLine": 52,
+                  "endColumn": 4
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "metalinguistic abstraction",
+          "level": "error",
+          "message": {
+            "text": "The feature file uses 'user' terminology but the code model uses 'Person'. This semantic mismatch between domain language (user with first name, last name, email) and implementation (Person case class) reduces code readability and makes it harder to trace requirements to implementation."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/scala/features/userRepository.feature"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 3,
+                  "endColumn": 51
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "debth of abstraction",
+          "level": "error",
+          "message": {
+            "text": "The savePerson action has a call chain depth of 4: savePerson (main.scala:48) -> peopleService.savePerson (PeopleService:12) -> personRepository.insertOne (ApplicationRepository:27) -> toMongoObject extension. While acceptable, this adds indirection that could be simplified."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main/scala/main.scala"
+                },
+                "region": {
+                  "startLine": 48,
+                  "startColumn": 3,
+                  "endLine": 69,
+                  "endColumn": 4
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
