@@ -1,10 +1,3 @@
-The current project is web application with two endpoints:
-POST /people/save
-GET  /people
-
-It is written in scala 3 with ZIO effects library
-
+Having classes with high dependencies indicate that they are doing too much and that they might be split into smaller classes. There are many reasons why this is antipattern. One is that the cognitive complexity is too big, other is that potential break in the lazy loading will cause that the class takes too much to load and the startup time is severely affected.
 Can you analyze the codebase and see if the number of dependencies of the classes is too big.
-Usually if classes have 20 dependencies there is problem with God Object or even some separation of concerns. Having small number of injected classes as mean from all classes is good while large number is bad. You can even take the deviation into consideration and devise grade.
-
-I want to analyze the codebase and use this as metric for code quality.
+Usually if classes have significantly more dependencies there is problem with God Object or even some separation of concerns. Having small number of injected classes as mean from all classes is good while large number is bad. 
